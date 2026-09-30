@@ -220,9 +220,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         let modelShortName = usedModel;
         if (usedModel.includes('nemotron-3.5')) modelShortName = 'Nemotron 3.5 (30B)';
-        else if (usedModel.includes('mistral-nemo')) modelShortName = 'Mistral NeMo (12B)';
-        else if (usedModel.includes('llama-3.3')) modelShortName = 'Llama 3.3 (70B)';
+        else if (usedModel.includes('gemma-4')) modelShortName = 'Gemma 4 (31B IT)';
+        else if (usedModel.includes('deepseek-v4.1')) modelShortName = 'DeepSeek V4.1 Flash';
         else if (usedModel.includes('llama-3.1-nemotron')) modelShortName = 'Nemotron (70B)';
+        else if (usedModel.includes('riva-translate')) modelShortName = 'Riva Translate (4B)';
 
         sendResponse({
           success: true,
