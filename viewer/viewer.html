@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edge AI PDF Reader & Translator</title>
+  
+  <!-- PDF.js Styles -->
+  <link rel="stylesheet" href="lib/pdf_viewer.min.css">
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body class="theme-light">
+  <div id="appContainer" class="app-container">
+    
+    <!-- Top Modern Toolbar -->
+    <header class="main-toolbar" id="mainToolbar">
+      <!-- Left Section -->
+      <div class="toolbar-section left">
+        <button id="btnToggleSidebar" class="tool-btn" title="Đóng/Mở thanh bên (Ctrl+B)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+          <span id="annotationCountBadge" class="badge-count hidden">0</span>
+        </button>
+
+        <div class="doc-title-wrapper" title="Nhấp để đổi tên hoặc mở file khác">
+          <span id="docTitle" class="doc-title">Chưa có tài liệu</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Page Navigation -->
+        <div class="nav-group">
+          <button id="btnPrevPage" class="tool-btn" title="Trang trước (Phím ← hoặc K)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <div class="page-input-box">
+            <input type="number" id="pageNumberInput" min="1" value="1">
+            <span class="page-slash">/</span>
+            <span id="totalPagesCount" class="total-pages">0</span>
+          </div>
+          <button id="btnNextPage" class="tool-btn" title="Trang sau (Phím → hoặc J)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Center Section: Zoom & Rotate -->
+      <div class="toolbar-section center">
+        <button id="btnZoomOut" class="tool-btn" title="Thu nhỏ (Ctrl -)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+
+        <div class="zoom-selector-wrapper">
+          <select id="zoomSelector" class="tool-select">
+            <option value="auto">Tự động</option>
+            <option value="page-fit">Vừa trang</option>
+            <option value="page-width">Vừa chiều rộng</option>
+            <option value="0.5">50%</option>
+            <option value="0.75">75%</option>
+            <option value="1" selected>100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+            <option value="2">200%</option>
+          </select>
+        </div>
+
+        <button id="btnZoomIn" class="tool-btn" title="Phóng to (Ctrl +)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+
+        <button id="btnRotate" class="tool-btn" title="Xoay trang (90°)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Right Section: Tools, Theme & Export -->
+      <div class="toolbar-section right">
+        <!-- Highlight Color Palette Tool -->
+        <div class="highlight-tool-wrapper">
+          <button id="btnHighlightTool" class="tool-btn active-tool" title="Công cụ Highlight (H)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m9 11-6 6v3h3l6-6"></path>
+              <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+            </svg>
+            <span class="active-color-dot" id="activeColorDot"></span>
+          </button>
+          
+          <div class="color-dropdown" id="colorDropdown">
+            <button class="color-btn active" data-color="#fef08a" title="Vàng (Yellow)"></button>
+            <button class="color-btn" data-color="#bbf7d0" title="Xanh lá (Green)"></button>
+            <button class="color-btn" data-color="#bfdbfe" title="Xanh dương (Blue)"></button>
+            <button class="color-btn" data-color="#fbcfe8" title="Hồng (Pink)"></button>
+            <button class="color-btn" data-color="#fed7aa" title="Cam (Orange)"></button>
+          </div>
+        </div>
+
+        <!-- Search Button -->
+        <button id="btnSearch" class="tool-btn" title="Tìm kiếm văn bản (Ctrl+F)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+
+        <!-- Theme Switcher -->
+        <div class="theme-menu-wrapper">
+          <button id="btnTheme" class="tool-btn" title="Đổi màu nền đọc sách">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Export Menu -->
+        <div class="export-dropdown-wrapper">
+          <button id="btnExport" class="btn-primary-sm" title="Tùy chọn tải về">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Xuất file</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          <div class="dropdown-menu" id="exportMenu">
+            <button id="menuExportPdf" class="menu-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <div>
+                <strong>Tải PDF đã Highlight</strong>
+                <span>Nhúng highlight & ghi chú trực tiếp vào file</span>
+              </div>
+            </button>
+            <button id="menuExportVocabMd" class="menu-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <div>
+                <strong>Xuất Sổ từ vựng (Markdown)</strong>
+                <span>Dành cho Obsidian, Notion, Logseq</span>
+              </div>
+            </button>
+            <button id="menuExportVocabAnki" class="menu-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <div>
+                <strong>Xuất thẻ Anki (.txt)</strong>
+                <span>Nhập trực tiếp vào Anki Flashcards</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Open File Button -->
+        <button id="btnOpenFile" class="tool-btn" title="Mở file PDF từ máy tính">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+        <input type="file" id="pdfFileInput" accept="application/pdf" hidden>
+      </div>
+    </header>
+
+    <!-- Find/Search In Document Bar -->
+    <div id="searchBar" class="search-bar hidden">
+      <div class="search-input-wrapper">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="findInput" placeholder="Tìm kiếm trong tài liệu..." autocomplete="off">
+        <span id="findResultsCount" class="find-count"></span>
+      </div>
+      <button id="btnFindPrev" class="search-btn" title="Tìm kết quả trước (Shift+Enter)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+      </button>
+      <button id="btnFindNext" class="search-btn" title="Tìm kết quả tiếp (Enter)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <button id="btnCloseSearch" class="search-btn" title="Đóng tìm kiếm (Esc)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <div class="workspace-layout">
+      
+      <!-- Collapsible Sidebar -->
+      <aside id="sidebar" class="sidebar">
+        <!-- Sidebar Navigation Tabs -->
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="annotations" title="Sổ từ vựng & Chú thích">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span>Từ vựng & Chú thích</span>
+          </button>
+          <button class="tab-btn" data-tab="outline" title="Mục lục PDF">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <span>Mục lục</span>
+          </button>
+          <button class="tab-btn" data-tab="settings" title="Cài đặt NVIDIA API">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Cài đặt</span>
+          </button>
+        </div>
+
+        <!-- Sidebar Content Panels -->
+        <div class="sidebar-content">
+          <!-- 1. Annotations & Vocabulary Panel -->
+          <div id="panelAnnotations" class="tab-panel active">
+            <div class="panel-header">
+              <div class="filter-row">
+                <input type="text" id="annotationSearchInput" placeholder="Tìm kiếm từ đã lưu..." class="panel-search">
+              </div>
+            </div>
+            <div id="annotationsList" class="annotations-list">
+              <div class="empty-state">
+                <span class="empty-icon">💡</span>
+                <p>Chưa có ghi chú hoặc từ vựng nào.</p>
+                <small>Bôi đen chữ trong PDF để Dịch và Highlight!</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Outline Panel -->
+          <div id="panelOutline" class="tab-panel">
+            <div id="outlineView" class="outline-tree">
+              <div class="empty-state">
+                <p>Tài liệu này không có mục lục.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Settings Panel -->
+          <div id="panelSettings" class="tab-panel">
+            <div class="settings-form">
+              <div class="form-group">
+                <div class="label-with-badge">
+                  <label for="settingApiKey">NVIDIA API Key</label>
+                  <span class="badge-nvidia-sm">NVIDIA NIM</span>
+                </div>
+                <div class="input-with-icon">
+                  <input type="password" id="settingApiKey" placeholder="nvapi-..." autocomplete="off">
+                  <button type="button" id="btnToggleSettingKey" class="icon-btn-inline">👁️</button>
+                </div>
+                <small class="helper-text">Key dùng để gọi mô hình dịch chuyên sâu <code>nvidia/riva-translate-4b-instruct-v2</code>.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="settingModel">Mô hình AI</label>
+                <input type="text" id="settingModel" value="nvidia/riva-translate-4b-instruct-v2" readonly class="input-readonly">
+              </div>
+
+              <div class="form-group">
+                <label for="settingTargetLang">Ngôn ngữ dịch đích</label>
+                <select id="settingTargetLang" class="form-select">
+                  <option value="vi" selected>Tiếng Việt (Vietnamese)</option>
+                  <option value="en">Tiếng Anh (English)</option>
+                  <option value="ja">Tiếng Nhật (Japanese)</option>
+                  <option value="fr">Tiếng Pháp (French)</option>
+                  <option value="zh">Tiếng Trung (Chinese)</option>
+                </select>
+              </div>
+
+              <div class="form-group switch-group">
+                <div>
+                  <strong>Tự động dịch khi bôi đen</strong>
+                  <p class="helper-text">Hiển thị thẻ dịch ngay khi thả chuột</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="settingAutoTranslate" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="button-stack">
+                <button id="btnSaveSettings" class="btn btn-primary full-width">Lưu Cài Đặt</button>
+                <button id="btnTestApiSidebar" class="btn btn-outline full-width">Kiểm tra kết nối API</button>
+              </div>
+              <div id="sidebarTestResult" class="test-result hidden"></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main PDF Viewing Container -->
+      <main id="viewerContainer" class="viewer-container">
+        
+        <!-- Welcome Screen (When no PDF is loaded) -->
+        <div id="welcomeScreen" class="welcome-screen">
+          <div class="welcome-card">
+            <div class="welcome-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <h2>Edge AI PDF Translator & Reader</h2>
+            <p class="welcome-desc">
+              Trình đọc PDF tích hợp mô hình dịch thuật <strong>NVIDIA Riva Translate 4B</strong>, hỗ trợ Highlight đa sắc màu, ghi chú thông minh và xuất sổ từ vựng.
+            </p>
+
+            <div class="welcome-actions">
+              <div style="display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap;">
+                <button id="btnWelcomeOpen" class="btn btn-primary btn-lg">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  Chọn file PDF từ máy tính
+                </button>
+                <button id="btnWelcomeSample" class="btn btn-outline btn-lg">
+                  <span>📄</span>
+                  Mở tài liệu mẫu thử nghiệm
+                </button>
+              </div>
+              <span class="or-divider">hoặc kéo thả file PDF vào bất kỳ đâu trên màn hình</span>
+            </div>
+
+            <div class="welcome-features-grid">
+              <div class="feat-box">
+                <span class="feat-icon">⚡</span>
+                <strong>Dịch tức thì</strong>
+                <span>NVIDIA Riva 4B Instruct v2 xử lý ngắt dòng thông minh</span>
+              </div>
+              <div class="feat-box">
+                <span class="feat-icon">🖍️</span>
+                <strong>Highlight & Chú thích</strong>
+                <span>Tô màu 5 cấp độ, gắn ghi chú và lưu trực tiếp vào file PDF</span>
+              </div>
+              <div class="feat-box">
+                <span class="feat-icon">📚</span>
+                <strong>Học từ vựng</strong>
+                <span>Xuất flashcards Anki & tài liệu Markdown ôn tập tiện lợi</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDF.js Canvas Layer -->
+        <div id="viewer" class="pdfViewer"></div>
+      </main>
+    </div>
+
+    <!-- Floating Action Bubble (Appears right at text selection) -->
+    <div id="floatingActionBubble" class="floating-bubble hidden">
+      <button id="bubbleBtnTranslate" class="bubble-action-btn primary" title="Dịch đoạn văn bản">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m5 8 6 6"></path>
+          <path d="m4 14 6-6 2-3"></path>
+          <path d="M2 5h12"></path>
+          <path d="M7 2h1"></path>
+          <path d="m22 22-5-10-5 10"></path>
+          <path d="M14 18h6"></path>
+        </svg>
+        <span>Dịch AI</span>
+      </button>
+
+      <div class="bubble-divider"></div>
+
+      <!-- Quick Highlight Colors -->
+      <div class="bubble-colors">
+        <button class="bubble-color-btn" data-color="#fef08a" style="background:#fef08a;" title="Highlight Vàng"></button>
+        <button class="bubble-color-btn" data-color="#bbf7d0" style="background:#bbf7d0;" title="Highlight Xanh lá"></button>
+        <button class="bubble-color-btn" data-color="#bfdbfe" style="background:#bfdbfe;" title="Highlight Xanh dương"></button>
+        <button class="bubble-color-btn" data-color="#fbcfe8" style="background:#fbcfe8;" title="Highlight Hồng"></button>
+        <button class="bubble-color-btn" data-color="#fed7aa" style="background:#fed7aa;" title="Highlight Cam"></button>
+      </div>
+
+      <div class="bubble-divider"></div>
+
+      <button id="bubbleBtnNote" class="bubble-icon-btn" title="Thêm chú thích / Ghi chú">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </button>
+
+      <button id="bubbleBtnSpeak" class="bubble-icon-btn" title="Nghe phát âm">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+
+      <button id="bubbleBtnCopy" class="bubble-icon-btn" title="Sao chép văn bản đã sửa ngắt dòng">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Translation Card Tooltip (Displays NVIDIA Translation) -->
+    <div id="translationCard" class="translation-card hidden">
+      <div class="card-header">
+        <div class="card-badge">
+          <span class="dot-green"></span>
+          <span id="transEngineLabel">NVIDIA Riva Translate 4B</span>
+        </div>
+        <div class="card-controls">
+          <button id="cardBtnSpeakOriginal" class="card-icon-btn" title="Nghe đoạn gốc (English)">🔊</button>
+          <button id="cardBtnCopyTrans" class="card-icon-btn" title="Sao chép bản dịch">📋</button>
+          <button id="cardBtnClose" class="card-icon-btn" title="Đóng">✕</button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div id="transLoading" class="trans-loading hidden">
+          <div class="spinner"></div>
+          <span>Đang dịch qua NVIDIA AI...</span>
+        </div>
+        
+        <div id="transResultWrapper" class="trans-result-wrapper">
+          <div id="transOriginalSnippet" class="trans-original"></div>
+          <div id="transResultText" class="trans-text"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button id="cardBtnSaveVocab" class="card-action-btn highlight-action">
+          <span>🖍️</span>
+          <span>Highlight & Lưu từ vựng</span>
+        </button>
+        <button id="cardBtnAddNote" class="card-action-btn note-action">
+          <span>📝</span>
+          <span>Gắn ghi chú</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Note Edit Popover / Modal -->
+    <div id="noteModal" class="note-modal-overlay hidden">
+      <div class="note-modal-box">
+        <div class="modal-header">
+          <h3>Thêm Chú Thích cho đoạn văn</h3>
+          <button id="btnCloseNoteModal" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="noteQuotedText" class="quoted-text"></div>
+          <textarea id="noteInput" placeholder="Nhập ghi chú, phân tích hoặc câu hỏi của bạn tại đây..." rows="4"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button id="btnDeleteNote" class="btn btn-outline btn-danger hidden">Xóa Chú Thích</button>
+          <button id="btnSaveNote" class="btn btn-primary">Lưu Chú Thích</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Highlight Hover Preview Card -->
+    <div id="highlightHoverCard" class="highlight-hover-card hidden">
+      <div class="hover-content">
+        <div id="hoverTransText" class="hover-trans"></div>
+        <div id="hoverNoteText" class="hover-note"></div>
+      </div>
+      <div class="hover-actions">
+        <button id="hoverBtnEditNote" class="btn-text-sm">✏️ Sửa ghi chú</button>
+        <button id="hoverBtnDelete" class="btn-text-sm text-danger">🗑️ Xóa highlight</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/pdf.min.js"></script>
+  <script src="lib/pdf_viewer.min.js"></script>
+  <script src="lib/pdf-lib.min.js"></script>
+  <script src="translate.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

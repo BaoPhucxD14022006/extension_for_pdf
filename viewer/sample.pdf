@@ -1,0 +1,75 @@
+%PDF-1.4
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 612 792]
+  /Resources <<
+    /Font <<
+      /F1 4 0 R
+    >>
+  >>
+  /Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+>>
+endobj
+5 0 obj
+<<
+  /Length 550
+>>
+stream
+BT
+/F1 18 Tf
+50 720 Td
+(Edge AI PDF Translator & Reader) Tj
+/F1 12 Tf
+0 -36 Td
+(Welcome to your smart PDF Reader powered by NVIDIA Riva Translate!) Tj
+0 -26 Td
+(This sample document lets you immediately test text selection, translation, and highlights.) Tj
+0 -32 Td
+(Try selecting this paragraph:) Tj
+0 -22 Td
+(Artificial intelligence and machine translation have revolutionized academic research.) Tj
+0 -20 Td
+(Advanced models can accurately translate complex terminology while maintaining natural phrasing.) Tj
+0 -32 Td
+(You can highlight any phrase, attach study notes, or export vocabulary directly to Anki.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000263 00000 n 
+0000000341 00000 n 
+trailer
+<<
+  /Size 6
+  /Root 1 0 R
+>>
+startxref
+942
+%%EOF
