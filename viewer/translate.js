@@ -123,8 +123,7 @@ class TranslationService {
           ],
           temperature: 0.2,
           top_p: 0.95,
-          max_tokens: 2048,
-          response_format: { type: 'json_object' }
+          max_tokens: 2048
         })
       });
 

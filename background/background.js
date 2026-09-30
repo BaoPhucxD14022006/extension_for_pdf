@@ -101,13 +101,13 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
   const messages = [
     {
       role: 'system',
-      content: `You are an expert translator. Translate accurately and naturally into ${languageName}. Always output your response formatted strictly as a JSON object: {"translation": "..."}`
+      content: `You are an expert translator specializing in academic and technical texts. Translate the source text accurately into natural, fluent ${languageName}. Output ONLY the translated text without conversational filler, explanations, or thinking.`
     },
     {
       role: 'user',
       content: isTest
-        ? `Translate into ${languageName}: "Artificial Intelligence". Output strictly as JSON: {"translation": "..."}`
-        : `Translate the following text into ${languageName}:\n\n"${text}"\n\nOutput strictly as JSON: {"translation": "..."}`
+        ? `Translate into ${languageName}: "Artificial Intelligence and Machine Translation"`
+        : `Translate the following text into ${languageName}:\n\n${text}`
     }
   ];
 
@@ -116,15 +116,7 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
     messages: messages,
     temperature: 0.2,
     top_p: 0.95,
-    max_tokens: isTest ? 512 : 2048,
-    chat_template_kwargs: {
-      enable_thinking: false
-    },
-    extra_body: {
-      chat_template_kwargs: {
-        enable_thinking: false
-      }
-    }
+    max_tokens: isTest ? 256 : 2048
   };
 
   // Add 15-second timeout to prevent infinite loading
