@@ -21,8 +21,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateStatusBadge(false);
     }
 
-    if (res.model && modelSelect) {
-      modelSelect.value = res.model;
+    if (modelSelect) {
+      const optionExists = res.model && Array.from(modelSelect.options).some(opt => opt.value === res.model);
+      if (optionExists) {
+        modelSelect.value = res.model;
+      } else {
+        modelSelect.value = 'nvidia/nemotron-3.5-lightning-30b-a3b';
+        chrome.storage.local.set({ model: 'nvidia/nemotron-3.5-lightning-30b-a3b' });
+      }
     }
   });
 

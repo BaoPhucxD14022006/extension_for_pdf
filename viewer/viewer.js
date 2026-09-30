@@ -499,7 +499,10 @@ class EdgeAiPdfViewer {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.get(['nvidiaApiKey', 'model', 'targetLang', 'theme', 'autoTranslate'], (res) => {
         if (res.nvidiaApiKey) this.dom.settingApiKey.value = res.nvidiaApiKey;
-        if (res.model) this.dom.settingModel.value = res.model;
+        if (this.dom.settingModel) {
+          const optExists = res.model && Array.from(this.dom.settingModel.options).some(opt => opt.value === res.model);
+          this.dom.settingModel.value = optExists ? res.model : 'nvidia/nemotron-3.5-lightning-30b-a3b';
+        }
         if (res.targetLang) {
           this.targetLang = res.targetLang;
           this.dom.settingTargetLang.value = res.targetLang;
