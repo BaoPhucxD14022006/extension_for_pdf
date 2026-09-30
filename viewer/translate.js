@@ -69,9 +69,44 @@ class TranslationService {
       return this.fallbackTranslate(cleanedText, targetLang);
     }
 
+    // Call background service worker (which has host_permissions and is not subject to CORS)
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'TRANSLATE_NVIDIA',
+          apiKey: apiKey,
+          model: settings.model || this.defaultModel,
+          text: cleanedText,
+          targetLang: targetLang
+        }, (res) => {
+          if (chrome.runtime.lastError || !res) {
+            console.warn('Background translation error:', chrome.runtime.lastError);
+            this.fallbackTranslate(cleanedText, targetLang).then(resolve);
+            return;
+          }
+
+          if (res.success) {
+            resolve({
+              text: res.translation,
+              cleanedOriginal: cleanedText,
+              engine: res.engine || 'NVIDIA Riva Translate 4B',
+              model: res.model,
+              warning: res.warning
+            });
+          } else {
+            resolve({
+              text: 'Lỗi dịch thuật: ' + res.error,
+              cleanedOriginal: cleanedText,
+              error: res.error
+            });
+          }
+        });
+      });
+    }
+
+    // Direct fetch fallback for non-extension environments
     try {
       const languageName = targetLang === 'vi' ? 'Vietnamese' : (targetLang === 'en' ? 'English' : targetLang);
-      
       const prompt = `Translate the following text into natural, accurate ${languageName}. Output only the translation without any explanations or introductory remarks:\n\n${cleanedText}`;
 
       const response = await fetch(this.apiUrl, {
@@ -82,12 +117,7 @@ class TranslationService {
         },
         body: JSON.stringify({
           model: settings.model || this.defaultModel,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
+          messages: [{ role: 'user', content: prompt }],
           temperature: 0.1,
           top_p: 0.8,
           max_tokens: 1024

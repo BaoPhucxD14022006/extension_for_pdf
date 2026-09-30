@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Test NVIDIA API connection
-  btnTestKey.addEventListener('click', async () => {
+  // Test NVIDIA API connection via background worker (avoids CORS)
+  btnTestKey.addEventListener('click', () => {
     const key = apiKeyInput.value.trim();
     if (!key) {
       showResult('error', 'Vui lòng nhập API Key trước khi kiểm tra!');
@@ -61,43 +61,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnTestKey.textContent = 'Đang thử...';
     testResult.className = 'test-result hidden';
 
-    try {
-      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: 'nvidia/riva-translate-4b-instruct-v2',
-          messages: [
-            {
-              role: 'user',
-              content: 'Translate the following English word to Vietnamese: "Artificial Intelligence"'
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 60
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || `Lỗi HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const translated = data.choices?.[0]?.message?.content?.trim() || 'Kết nối thành công!';
-      showResult('success', `Kết nối NVIDIA API thành công! Thử nghiệm: "${translated}"`);
-      updateStatusBadge(true);
-      // Auto-save if valid
-      chrome.storage.local.set({ nvidiaApiKey: key });
-    } catch (err) {
-      showResult('error', `Kết nối thất bại: ${err.message}`);
-    } finally {
+    chrome.runtime.sendMessage({
+      action: 'TEST_NVIDIA_API',
+      apiKey: key,
+      model: 'nvidia/riva-translate-4b-instruct-v2'
+    }, (response) => {
       btnTestKey.disabled = false;
       btnTestKey.textContent = 'Kiểm tra kết nối';
-    }
+
+      if (chrome.runtime.lastError) {
+        showResult('error', `Lỗi tiện ích: ${chrome.runtime.lastError.message}`);
+        return;
+      }
+
+      if (!response) {
+        showResult('error', 'Không nhận được phản hồi từ tiện ích. Vui lòng tải lại extension.');
+        return;
+      }
+
+      if (response.success) {
+        showResult('success', `Kết nối NVIDIA API thành công! Thử nghiệm: "${response.translation}"`);
+        updateStatusBadge(true);
+        chrome.storage.local.set({ nvidiaApiKey: key });
+      } else {
+        showResult('error', `Kết nối thất bại: ${response.error}`);
+      }
+    });
   });
 
   function showResult(type, message) {

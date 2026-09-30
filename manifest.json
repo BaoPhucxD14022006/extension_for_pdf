@@ -27,6 +27,11 @@
     "tabs",
     "contextMenus"
   ],
+  "host_permissions": [
+    "https://integrate.api.nvidia.com/*",
+    "https://translate.googleapis.com/*",
+    "<all_urls>"
+  ],
   "web_accessible_resources": [
     {
       "resources": [

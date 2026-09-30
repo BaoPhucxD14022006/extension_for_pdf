@@ -541,7 +541,7 @@ class EdgeAiPdfViewer {
     }
   }
 
-  async testApiSidebar() {
+  testApiSidebar() {
     const key = this.dom.settingApiKey.value.trim();
     if (!key) {
       this.showSidebarResult('error', 'Vui lòng nhập API Key trước khi kiểm tra!');
@@ -552,39 +552,30 @@ class EdgeAiPdfViewer {
     this.dom.btnTestApiSidebar.textContent = 'Đang kiểm tra...';
     this.dom.sidebarTestResult.className = 'test-result hidden';
 
-    try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: 'nvidia/riva-translate-4b-instruct-v2',
-          messages: [
-            {
-              role: 'user',
-              content: 'Translate the following to Vietnamese: "NVIDIA Artificial Intelligence"'
-            }
-          ],
-          temperature: 0.1,
-          max_tokens: 50
-        })
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({
+        action: 'TEST_NVIDIA_API',
+        apiKey: key,
+        model: 'nvidia/riva-translate-4b-instruct-v2'
+      }, (res) => {
+        this.dom.btnTestApiSidebar.disabled = false;
+        this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
+
+        if (chrome.runtime.lastError || !res) {
+          this.showSidebarResult('error', 'Lỗi tiện ích: ' + (chrome.runtime.lastError?.message || 'Không có phản hồi'));
+          return;
+        }
+
+        if (res.success) {
+          this.showSidebarResult('success', `Kết nối thành công! Bản dịch mẫu: "${res.translation}"`);
+        } else {
+          this.showSidebarResult('error', `Kết nối thất bại: ${res.error}`);
+        }
       });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || errJson.message || `Lỗi HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const text = data.choices?.[0]?.message?.content?.trim() || 'OK';
-      this.showSidebarResult('success', `Kết nối thành công! Bản dịch mẫu: "${text}"`);
-    } catch (err) {
-      this.showSidebarResult('error', `Kết nối thất bại: ${err.message}`);
-    } finally {
+    } else {
       this.dom.btnTestApiSidebar.disabled = false;
       this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
+      this.showSidebarResult('error', 'Không tìm thấy chrome.runtime. Vui lòng mở trong tiện ích mở rộng.');
     }
   }
 
