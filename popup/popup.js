@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({
       action: 'TEST_NVIDIA_API',
       apiKey: key,
-      model: 'nvidia/riva-translate-4b-instruct-v2'
+      model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
     }, (response) => {
       btnTestKey.disabled = false;
       btnTestKey.textContent = 'Kiểm tra kết nối';

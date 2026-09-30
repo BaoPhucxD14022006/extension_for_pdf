@@ -1,10 +1,10 @@
 // translate.js - Translation service for Edge AI PDF Reader
-// Powered by NVIDIA Riva Translate (nvidia/riva-translate-4b-instruct-v2)
+// Powered by NVIDIA Nemotron 3.5 Lightning (nvidia/nemotron-3.5-lightning-30b-a3b)
 
 class TranslationService {
   constructor() {
     this.apiUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
-    this.defaultModel = 'nvidia/riva-translate-4b-instruct-v2';
+    this.defaultModel = 'nvidia/nemotron-3.5-lightning-30b-a3b';
   }
 
   /**
@@ -89,7 +89,7 @@ class TranslationService {
             resolve({
               text: res.translation,
               cleanedOriginal: cleanedText,
-              engine: res.engine || 'NVIDIA Riva Translate 4B',
+              engine: res.engine || 'NVIDIA Nemotron 3.5 Lightning (30B A3B)',
               model: res.model,
               warning: res.warning
             });
@@ -107,7 +107,7 @@ class TranslationService {
     // Direct fetch fallback for non-extension environments
     try {
       const languageName = targetLang === 'vi' ? 'Vietnamese' : (targetLang === 'en' ? 'English' : targetLang);
-      const prompt = `Translate the following text into natural, accurate ${languageName}. Output only the translation without any explanations or introductory remarks:\n\n${cleanedText}`;
+      const prompt = `Translate the following text into natural, accurate ${languageName}.\n\nText: "${cleanedText}"\n\nOutput ONLY a JSON object: {"translation": "..."}`;
 
       const response = await fetch(this.apiUrl, {
         method: 'POST',
@@ -117,10 +117,14 @@ class TranslationService {
         },
         body: JSON.stringify({
           model: settings.model || this.defaultModel,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,
-          top_p: 0.8,
-          max_tokens: 1024
+          messages: [
+            { role: 'system', content: 'You are an expert translator. Always reply in JSON.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2,
+          top_p: 0.95,
+          max_tokens: 2048,
+          response_format: { type: 'json_object' }
         })
       });
 
@@ -131,12 +135,16 @@ class TranslationService {
       }
 
       const data = await response.json();
-      const translation = data.choices?.[0]?.message?.content?.trim() || '';
+      let translation = data.choices?.[0]?.message?.content?.trim() || '';
+      try {
+        const parsed = JSON.parse(translation.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, ''));
+        if (parsed.translation) translation = parsed.translation;
+      } catch (_) {}
 
       return {
         text: translation,
         cleanedOriginal: cleanedText,
-        engine: 'NVIDIA Riva Translate',
+        engine: 'NVIDIA Nemotron 3.5 Lightning (30B A3B)',
         model: settings.model || this.defaultModel
       };
     } catch (err) {

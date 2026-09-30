@@ -1,15 +1,16 @@
-# 📚 Edge AI PDF Translator & Reader (NVIDIA Riva Translate)
+# 📚 Edge AI PDF Translator & Reader (NVIDIA Nemotron 3.5 Lightning)
 
-Extension trình đọc và dịch thuật PDF thông minh dành cho **Microsoft Edge** và **Google Chrome (Manifest V3)**, tích hợp mô hình dịch thuật chuyên sâu **NVIDIA Riva Translate 4B (`nvidia/riva-translate-4b-instruct-v2`)**.
+Extension trình đọc và dịch thuật PDF thông minh dành cho **Microsoft Edge** và **Google Chrome (Manifest V3)**, tích hợp mô hình Mixture-of-Experts thế hệ mới **NVIDIA Nemotron 3.5 Lightning 30B A3B (`nvidia/nemotron-3.5-lightning-30b-a3b`)**.
 
 ---
 
 ## ✨ Tính Năng Nổi Bật
 
-1. **⚡ Dịch Thuật Trí Tuệ Nhân Tạo NVIDIA Riva 4B**:
-   - Gọi trực tiếp đến API của NVIDIA NIM (`nvidia/riva-translate-4b-instruct-v2`).
-   - Tự động khắc phục lỗi ngắt dòng của PDF (*glues broken lines & hyphens*), giúp bản dịch liền mạch, chính xác theo ngữ cảnh học thuật.
-   - Có chế độ dịch dự phòng (Google Translate) tự động kích hoạt nếu chưa cấu hình key.
+1. **⚡ Dịch Thuật Trí Tuệ Nhân Tạo NVIDIA Nemotron 3.5 Lightning (30B/3B MoE)**:
+   - Gọi trực tiếp đến API NVIDIA NIM (`nvidia/nemotron-3.5-lightning-30b-a3b`).
+   - **Tối ưu hóa Structured JSON Schema**: Ép mô hình trả về cấu trúc JSON chuẩn `{"translation": "..."}`, loại bỏ hoàn toàn các câu thừa thãi hay suy nghĩ lan man.
+   - **Lọc suy nghĩ thông minh (Thinking/Reasoning filter)**: Tự động loại bỏ thẻ `<think>...</think>` của các mô hình MoE reasoning, chỉ giữ lại văn bản dịch thuần túy, mượt mà và chuẩn học thuật.
+   - Tự động khắc phục lỗi ngắt dòng của PDF (*glues broken lines & hyphens*), giúp câu văn liền mạch.
 
 2. **🪄 Bôi Đen Nổi Bong Bóng Tức Thì (Floating Action Bubble)**:
    - Khi bôi đen văn bản trong file PDF, bong bóng công cụ xuất hiện ngay tại vị trí con trỏ chuột.
@@ -57,7 +58,7 @@ Extension trình đọc và dịch thuật PDF thông minh dành cho **Microsoft
 
 1. Bấm vào biểu tượng của tiện ích trên thanh công cụ Edge để mở cửa sổ nhỏ (Popup).
 2. Dán mã **NVIDIA API Key** (bắt đầu bằng `nvapi-...`) vào ô nhập liệu.
-3. Bấm **"Lưu Key"** rồi bấm **"Kiểm tra kết nối"** để thử nghiệm mô hình `nvidia/riva-translate-4b-instruct-v2`.
+3. Bấm **"Lưu Key"** rồi bấm **"Kiểm tra kết nối"** để thử nghiệm mô hình `nvidia/nemotron-3.5-lightning-30b-a3b`.
 4. Khi thấy thông báo *"Kết nối NVIDIA API thành công!"*, bạn đã sẵn sàng sử dụng!
 
 ---

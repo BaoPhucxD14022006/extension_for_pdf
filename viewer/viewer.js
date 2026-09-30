@@ -559,7 +559,7 @@ class EdgeAiPdfViewer {
       chrome.runtime.sendMessage({
         action: 'TEST_NVIDIA_API',
         apiKey: key,
-        model: 'nvidia/riva-translate-4b-instruct-v2'
+        model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
       }, (res) => {
         this.dom.btnTestApiSidebar.disabled = false;
         this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
@@ -810,7 +810,7 @@ class EdgeAiPdfViewer {
       this.currentCardData = {
         cleanedOriginal: sel.cleanedText,
         translation: result.text,
-        engine: result.engine || 'NVIDIA Riva Translate 4B'
+        engine: result.engine || 'NVIDIA Nemotron 3.5 Lightning (30B A3B)'
       };
 
       this.dom.transLoading.classList.add('hidden');
@@ -819,7 +819,7 @@ class EdgeAiPdfViewer {
         ? sel.cleanedText.slice(0, 120) + '...' 
         : sel.cleanedText;
       this.dom.transResultText.textContent = result.text;
-      this.dom.transEngineLabel.textContent = result.engine || 'NVIDIA Riva Translate 4B';
+      this.dom.transEngineLabel.textContent = result.engine || 'NVIDIA Nemotron 3.5 Lightning (30B A3B)';
 
     } catch (err) {
       this.dom.transLoading.classList.add('hidden');
