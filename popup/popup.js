@@ -61,11 +61,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnTestKey.textContent = 'Đang thử...';
     testResult.className = 'test-result hidden';
 
+    let finished = false;
+    const safetyTimer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        btnTestKey.disabled = false;
+        btnTestKey.textContent = 'Kiểm tra kết nối';
+        showResult('error', 'Quá thời gian chờ phản hồi (Timeout). Vui lòng thử lại hoặc kiểm tra kết nối mạng.');
+      }
+    }, 16000);
+
     chrome.runtime.sendMessage({
       action: 'TEST_NVIDIA_API',
       apiKey: key,
       model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
     }, (response) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(safetyTimer);
+
       btnTestKey.disabled = false;
       btnTestKey.textContent = 'Kiểm tra kết nối';
 

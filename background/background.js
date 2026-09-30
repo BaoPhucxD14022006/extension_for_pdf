@@ -87,7 +87,7 @@ function extractCleanTranslation(rawContent) {
 }
 
 /**
- * Call NVIDIA NIM API with structured schema support
+ * Call NVIDIA NIM API with structured schema support and strict timeout
  */
 async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = false) {
   const cleanKey = (apiKey || '').trim();
@@ -101,11 +101,13 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
   const messages = [
     {
       role: 'system',
-      content: `You are an expert academic and technical translator specializing in accurate, fluent ${languageName}. Always output your final answer strictly as a valid JSON object matching the requested schema without conversational filler.`
+      content: `You are an expert translator. Translate accurately and naturally into ${languageName}. Always output your response formatted strictly as a JSON object: {"translation": "..."}`
     },
     {
       role: 'user',
-      content: `Translate the following source text accurately into natural, coherent ${languageName}.\n\nSource text:\n"${text}"\n\nSchema Requirement: You must respond ONLY with a JSON object conforming strictly to this format:\n{\n  "translation": "your translated text in ${languageName} here"\n}`
+      content: isTest
+        ? `Translate into ${languageName}: "Artificial Intelligence". Output strictly as JSON: {"translation": "..."}`
+        : `Translate the following text into ${languageName}:\n\n"${text}"\n\nOutput strictly as JSON: {"translation": "..."}`
     }
   ];
 
@@ -114,34 +116,54 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
     messages: messages,
     temperature: 0.2,
     top_p: 0.95,
-    max_tokens: isTest ? 150 : 2048,
-    response_format: {
-      type: 'json_object'
+    max_tokens: isTest ? 512 : 2048,
+    chat_template_kwargs: {
+      enable_thinking: false
+    },
+    extra_body: {
+      chat_template_kwargs: {
+        enable_thinking: false
+      }
     }
   };
 
-  const response = await fetch(NVIDIA_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${cleanKey}`
-    },
-    body: JSON.stringify(payload)
-  });
+  // Add 15-second timeout to prevent infinite loading
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    const errorMsg = errorJson.detail || errorJson.error?.message || errorJson.message || `Lỗi HTTP ${response.status}`;
-    throw new Error(errorMsg);
+  try {
+    const response = await fetch(NVIDIA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cleanKey}`
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => ({}));
+      const errorMsg = errorJson.detail || errorJson.error?.message || errorJson.message || `Lỗi HTTP ${response.status}`;
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content?.trim();
+    if (!rawContent) {
+      throw new Error('Mô hình không trả về nội dung.');
+    }
+
+    return extractCleanTranslation(rawContent);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Quá thời gian chờ (Timeout sau 15 giây). NVIDIA API đang phản hồi chậm, vui lòng thử lại.');
+    }
+    throw err;
   }
-
-  const data = await response.json();
-  const rawContent = data.choices?.[0]?.message?.content?.trim();
-  if (!rawContent) {
-    throw new Error('Mô hình không trả về nội dung.');
-  }
-
-  return extractCleanTranslation(rawContent);
 }
 
 /**

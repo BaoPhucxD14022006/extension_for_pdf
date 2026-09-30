@@ -553,7 +553,15 @@ class EdgeAiPdfViewer {
 
     this.dom.btnTestApiSidebar.disabled = true;
     this.dom.btnTestApiSidebar.textContent = 'Đang kiểm tra...';
-    this.dom.sidebarTestResult.className = 'test-result hidden';
+    let finished = false;
+    const safetyTimer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        this.dom.btnTestApiSidebar.disabled = false;
+        this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
+        this.showSidebarResult('error', 'Quá thời gian chờ phản hồi (Timeout). Vui lòng thử lại.');
+      }
+    }, 16000);
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       chrome.runtime.sendMessage({
@@ -561,6 +569,10 @@ class EdgeAiPdfViewer {
         apiKey: key,
         model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
       }, (res) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(safetyTimer);
+
         this.dom.btnTestApiSidebar.disabled = false;
         this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
 
