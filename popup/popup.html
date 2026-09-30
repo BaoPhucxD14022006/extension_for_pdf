@@ -59,7 +59,19 @@
         <span id="apiStatus" class="status-pill status-unconfigured">Chưa nhập key</span>
       </div>
 
+      <!-- Model Choice -->
+      <div class="model-group">
+        <label for="modelSelect" class="field-label">Mô hình AI</label>
+        <select id="modelSelect" class="form-select">
+          <option value="nvidia/nemotron-3.5-lightning-30b-a3b">Nemotron 3.5 Lightning (30B)</option>
+          <option value="nv-mistralai/mistral-nemo-12b-instruct">Mistral NeMo (12B) - Siêu nhanh (~1s)</option>
+          <option value="meta/llama-3.3-70b-instruct">Llama 3.3 (70B) - Học thuật chuẩn xác</option>
+          <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron (70B) - NVIDIA Flagship</option>
+        </select>
+      </div>
+
       <div class="input-group">
+        <label for="apiKeyInput" class="field-label">API Key</label>
         <div class="input-wrapper">
           <input type="password" id="apiKeyInput" placeholder="nvapi-..." autocomplete="off">
           <button type="button" id="btnToggleKey" class="btn-icon" title="Hiện/ẩn key">
@@ -70,7 +82,7 @@
           </button>
         </div>
         <div class="button-row">
-          <button id="btnSaveKey" class="btn btn-secondary btn-sm">Lưu Key</button>
+          <button id="btnSaveKey" class="btn btn-secondary btn-sm">Lưu cấu hình</button>
           <button id="btnTestKey" class="btn btn-outline btn-sm">Kiểm tra kết nối</button>
         </div>
       </div>
@@ -81,7 +93,7 @@
     <div class="features-list">
       <div class="feature-item">
         <span class="icon">✨</span>
-        <span>Dịch chuẩn xác qua <code>nemotron-3.5-30b</code></span>
+        <span>Hỗ trợ Nemotron 3.5 & Mistral NeMo 12B</span>
       </div>
       <div class="feature-item">
         <span class="icon">🖍️</span>

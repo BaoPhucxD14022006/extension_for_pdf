@@ -215,9 +215,34 @@ body {
   color: var(--success);
 }
 
-.status-unconfigured {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--error);
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.model-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.form-select:focus {
+  border-color: var(--accent);
 }
 
 .input-wrapper {

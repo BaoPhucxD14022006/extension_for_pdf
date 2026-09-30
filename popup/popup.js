@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnOpenViewer = document.getElementById('btnOpenViewer');
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
+  const modelSelect = document.getElementById('modelSelect');
   const apiKeyInput = document.getElementById('apiKeyInput');
   const btnToggleKey = document.getElementById('btnToggleKey');
   const btnSaveKey = document.getElementById('btnSaveKey');
@@ -11,15 +12,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const apiStatus = document.getElementById('apiStatus');
   const testResult = document.getElementById('testResult');
 
-  // Load existing API Key
-  chrome.storage.local.get(['nvidiaApiKey'], (res) => {
+  // Load existing API Key & Model
+  chrome.storage.local.get(['nvidiaApiKey', 'model'], (res) => {
     if (res.nvidiaApiKey && res.nvidiaApiKey.trim() !== '') {
       apiKeyInput.value = res.nvidiaApiKey;
       updateStatusBadge(true);
     } else {
       updateStatusBadge(false);
     }
+
+    if (res.model && modelSelect) {
+      modelSelect.value = res.model;
+    }
   });
+
+  if (modelSelect) {
+    modelSelect.addEventListener('change', () => {
+      chrome.storage.local.set({ model: modelSelect.value });
+    });
+  }
 
   function updateStatusBadge(isReady) {
     if (isReady) {
@@ -40,25 +51,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Save API Key
+  // Save API Key & Model
   btnSaveKey.addEventListener('click', () => {
     const key = apiKeyInput.value.trim();
-    chrome.storage.local.set({ nvidiaApiKey: key }, () => {
+    const model = modelSelect ? modelSelect.value : 'nvidia/nemotron-3.5-lightning-30b-a3b';
+    chrome.storage.local.set({ nvidiaApiKey: key, model: model }, () => {
       updateStatusBadge(!!key);
-      showResult('success', 'Đã lưu API Key thành công!');
+      showResult('success', 'Đã lưu cấu hình API Key & Mô hình thành công!');
     });
   });
 
   // Test NVIDIA API connection via background worker (avoids CORS)
   btnTestKey.addEventListener('click', () => {
     const key = apiKeyInput.value.trim();
+    const model = modelSelect ? modelSelect.value : 'nvidia/nemotron-3.5-lightning-30b-a3b';
+
     if (!key) {
       showResult('error', 'Vui lòng nhập API Key trước khi kiểm tra!');
       return;
     }
 
     btnTestKey.disabled = true;
-    btnTestKey.textContent = 'Đang thử...';
+    btnTestKey.textContent = 'Đang kết nối...';
     testResult.className = 'test-result hidden';
 
     let finished = false;
@@ -67,14 +81,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         finished = true;
         btnTestKey.disabled = false;
         btnTestKey.textContent = 'Kiểm tra kết nối';
-        showResult('error', 'Quá thời gian chờ phản hồi (Timeout). Vui lòng thử lại hoặc kiểm tra kết nối mạng.');
+        showResult('error', 'Quá thời gian chờ phản hồi (Timeout). Máy chủ NVIDIA đang bận, bạn có thể thử đổi sang model Mistral NeMo 12B.');
       }
-    }, 16000);
+    }, 40000);
 
     chrome.runtime.sendMessage({
       action: 'TEST_NVIDIA_API',
       apiKey: key,
-      model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
+      model: model
     }, (response) => {
       if (finished) return;
       finished = true;
@@ -96,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (response.success) {
         showResult('success', `Kết nối NVIDIA API thành công! Thử nghiệm: "${response.translation}"`);
         updateStatusBadge(true);
-        chrome.storage.local.set({ nvidiaApiKey: key });
+        chrome.storage.local.set({ nvidiaApiKey: key, model: model });
       } else {
         showResult('error', `Kết nối thất bại: ${response.error}`);
       }

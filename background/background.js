@@ -101,12 +101,14 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
   const messages = [
     {
       role: 'system',
-      content: `You are an expert translator specializing in academic and technical texts. Translate the source text accurately into natural, fluent ${languageName}. Output ONLY the translated text without conversational filler, explanations, or thinking.`
+      content: isTest
+        ? `Translate directly into ${languageName}. Output only the translation.`
+        : `You are an expert translator specializing in academic and technical texts. Translate the source text accurately into natural, fluent ${languageName}. Output ONLY the translated text without conversational filler, explanations, or thinking.`
     },
     {
       role: 'user',
       content: isTest
-        ? `Translate into ${languageName}: "Artificial Intelligence and Machine Translation"`
+        ? `Translate into ${languageName}: "Artificial Intelligence"`
         : `Translate the following text into ${languageName}:\n\n${text}`
     }
   ];
@@ -116,12 +118,13 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
     messages: messages,
     temperature: 0.2,
     top_p: 0.95,
-    max_tokens: isTest ? 256 : 2048
+    max_tokens: isTest ? 32 : 2048
   };
 
-  // Add 15-second timeout to prevent infinite loading
+  // 35s for test ping, 50s for full document translation
+  const timeoutMs = isTest ? 35000 : 50000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(NVIDIA_API_URL, {
@@ -152,7 +155,7 @@ async function callNvidiaApi(apiKey, model, text, targetLang = 'vi', isTest = fa
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      throw new Error('Quá thời gian chờ (Timeout sau 15 giây). NVIDIA API đang phản hồi chậm, vui lòng thử lại.');
+      throw new Error(`Quá thời gian chờ (${Math.round(timeoutMs / 1000)} giây). Máy chủ NVIDIA đang bận hoặc model phản hồi chậm. Bạn có thể thử lại hoặc đổi sang model nhanh hơn như Mistral NeMo 12B.`);
     }
     throw err;
   }
@@ -187,14 +190,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'TEST_NVIDIA_API') {
     (async () => {
       try {
+        const usedModel = message.model || DEFAULT_MODEL;
         const result = await callNvidiaApi(
           message.apiKey,
-          message.model || DEFAULT_MODEL,
-          'Artificial Intelligence and Machine Translation',
+          usedModel,
+          'Artificial Intelligence',
           'vi',
           true
         );
-        sendResponse({ success: true, translation: result });
+        sendResponse({ success: true, translation: result, model: usedModel });
       } catch (err) {
         sendResponse({ success: false, error: err.message });
       }
@@ -204,20 +208,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'TRANSLATE_NVIDIA') {
     (async () => {
+      const usedModel = message.model || DEFAULT_MODEL;
       try {
         const result = await callNvidiaApi(
           message.apiKey,
-          message.model || DEFAULT_MODEL,
+          usedModel,
           message.text,
           message.targetLang || 'vi',
           false
         );
 
+        let modelShortName = usedModel;
+        if (usedModel.includes('nemotron-3.5')) modelShortName = 'Nemotron 3.5 (30B)';
+        else if (usedModel.includes('mistral-nemo')) modelShortName = 'Mistral NeMo (12B)';
+        else if (usedModel.includes('llama-3.3')) modelShortName = 'Llama 3.3 (70B)';
+        else if (usedModel.includes('llama-3.1-nemotron')) modelShortName = 'Nemotron (70B)';
+
         sendResponse({
           success: true,
           translation: result,
-          engine: 'NVIDIA Nemotron 3.5 Lightning (30B A3B)',
-          model: message.model || DEFAULT_MODEL
+          engine: `NVIDIA ${modelShortName}`,
+          model: usedModel
         });
       } catch (err) {
         // Attempt fallback if NVIDIA fails

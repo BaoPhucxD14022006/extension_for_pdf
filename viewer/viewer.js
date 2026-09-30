@@ -520,6 +520,7 @@ class EdgeAiPdfViewer {
 
   saveSettings() {
     const apiKey = this.dom.settingApiKey.value.trim();
+    const model = this.dom.settingModel.value;
     const targetLang = this.dom.settingTargetLang.value;
     const autoTranslate = this.dom.settingAutoTranslate.checked;
 
@@ -528,6 +529,7 @@ class EdgeAiPdfViewer {
 
     const data = {
       nvidiaApiKey: apiKey,
+      model,
       targetLang,
       autoTranslate
     };
@@ -538,6 +540,7 @@ class EdgeAiPdfViewer {
       });
     } else {
       localStorage.setItem('nvidiaApiKey', apiKey);
+      localStorage.setItem('nvidiaModel', model);
       localStorage.setItem('targetLang', targetLang);
       localStorage.setItem('autoTranslate', autoTranslate);
       this.showTemporaryNotification('Đã lưu cấu hình cài đặt!');
@@ -546,6 +549,8 @@ class EdgeAiPdfViewer {
 
   testApiSidebar() {
     const key = this.dom.settingApiKey.value.trim();
+    const model = this.dom.settingModel.value || 'nvidia/nemotron-3.5-lightning-30b-a3b';
+
     if (!key) {
       this.showSidebarResult('error', 'Vui lòng nhập API Key trước khi kiểm tra!');
       return;
@@ -559,15 +564,15 @@ class EdgeAiPdfViewer {
         finished = true;
         this.dom.btnTestApiSidebar.disabled = false;
         this.dom.btnTestApiSidebar.textContent = 'Kiểm tra kết nối API';
-        this.showSidebarResult('error', 'Quá thời gian chờ phản hồi (Timeout). Vui lòng thử lại.');
+        this.showSidebarResult('error', 'Quá thời gian chờ phản hồi (Timeout). Máy chủ NVIDIA đang bận, bạn có thể thử đổi sang model Mistral NeMo 12B.');
       }
-    }, 16000);
+    }, 40000);
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       chrome.runtime.sendMessage({
         action: 'TEST_NVIDIA_API',
         apiKey: key,
-        model: 'nvidia/nemotron-3.5-lightning-30b-a3b'
+        model: model
       }, (res) => {
         if (finished) return;
         finished = true;
