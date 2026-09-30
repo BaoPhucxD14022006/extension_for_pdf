@@ -335,8 +335,12 @@
       </aside>
 
       <!-- Main PDF Viewing Container -->
-      <main id="viewerContainer" class="viewer-container">
-        
+      <div class="viewer-wrapper">
+        <div id="viewerContainer" class="viewer-container">
+          <!-- PDF.js Canvas Layer -->
+          <div id="viewer" class="pdfViewer"></div>
+        </div>
+
         <!-- Welcome Screen (When no PDF is loaded) -->
         <div id="welcomeScreen" class="welcome-screen">
           <div class="welcome-card">
@@ -389,10 +393,7 @@
             </div>
           </div>
         </div>
-
-        <!-- PDF.js Canvas Layer -->
-        <div id="viewer" class="pdfViewer"></div>
-      </main>
+      </div>
     </div>
 
     <!-- Floating Action Bubble (Appears right at text selection) -->

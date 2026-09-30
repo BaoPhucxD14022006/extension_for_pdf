@@ -142,51 +142,54 @@ class EdgeAiPdfViewer {
   }
 
   initPdfViewerInstance() {
-    this.eventBus = new pdfjsViewer.EventBus();
-    this.pdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus: this.eventBus });
-    this.pdfFindController = new pdfjsViewer.PDFFindController({
-      eventBus: this.eventBus,
-      linkService: this.pdfLinkService
-    });
+    try {
+      this.eventBus = new pdfjsViewer.EventBus();
+      this.pdfLinkService = new pdfjsViewer.PDFLinkService({ eventBus: this.eventBus });
+      this.pdfFindController = new pdfjsViewer.PDFFindController({
+        eventBus: this.eventBus,
+        linkService: this.pdfLinkService
+      });
 
-    this.pdfViewer = new pdfjsViewer.PDFViewer({
-      container: this.dom.viewerContainer,
-      viewer: this.dom.viewer,
-      eventBus: this.eventBus,
-      linkService: this.pdfLinkService,
-      findController: this.pdfFindController,
-      textLayerMode: 2, // Enable text layer for selection
-      removePageBorders: false
-    });
+      this.pdfViewer = new pdfjsViewer.PDFViewer({
+        container: this.dom.viewerContainer,
+        viewer: this.dom.viewer,
+        eventBus: this.eventBus,
+        linkService: this.pdfLinkService,
+        findController: this.pdfFindController,
+        textLayerMode: 2, // Enable text layer for selection
+        removePageBorders: false
+      });
 
-    this.pdfLinkService.setViewer(this.pdfViewer);
+      this.pdfLinkService.setViewer(this.pdfViewer);
 
-    // Event: Page changed during scroll
-    this.eventBus.on('pagechanging', (evt) => {
-      this.currentPage = evt.pageNumber;
-      this.dom.pageNumberInput.value = this.currentPage;
-    });
+      // Event: Page changed during scroll
+      this.eventBus.on('pagechanging', (evt) => {
+        this.currentPage = evt.pageNumber;
+        this.dom.pageNumberInput.value = this.currentPage;
+      });
 
-    // Event: Page rendered -> Render highlights for this page!
-    this.eventBus.on('pagerendered', (evt) => {
-      this.renderHighlightsForPage(evt.pageNumber);
-    });
+      // Event: Page rendered -> Render highlights for this page!
+      this.eventBus.on('pagerendered', (evt) => {
+        this.renderHighlightsForPage(evt.pageNumber);
+      });
 
-    // Event: Text layer rendered -> ensure text is selectable
-    this.eventBus.on('textlayerrendered', (evt) => {
-      // Re-verify highlights if text layer finished after page
-      this.renderHighlightsForPage(evt.pageNumber);
-    });
+      // Event: Text layer rendered -> ensure text is selectable
+      this.eventBus.on('textlayerrendered', (evt) => {
+        this.renderHighlightsForPage(evt.pageNumber);
+      });
 
-    // Event: Find results update
-    this.eventBus.on('updatefindmatchescount', (evt) => {
-      const { total, current } = evt.matchesCount;
-      if (total > 0) {
-        this.dom.findResultsCount.textContent = `${current} / ${total}`;
-      } else {
-        this.dom.findResultsCount.textContent = '0 / 0';
-      }
-    });
+      // Event: Find results update
+      this.eventBus.on('updatefindmatchescount', (evt) => {
+        const { total, current } = evt.matchesCount;
+        if (total > 0) {
+          this.dom.findResultsCount.textContent = `${current} / ${total}`;
+        } else {
+          this.dom.findResultsCount.textContent = '0 / 0';
+        }
+      });
+    } catch (err) {
+      console.error('Lỗi khởi tạo PDFViewer instance:', err);
+    }
   }
 
   initEventListeners() {
@@ -649,6 +652,13 @@ class EdgeAiPdfViewer {
       this.totalPages = this.pdfDoc.numPages;
       this.dom.totalPagesCount.textContent = this.totalPages;
       this.dom.pageNumberInput.max = this.totalPages;
+
+      if (!this.pdfViewer) {
+        this.initPdfViewerInstance();
+      }
+      if (!this.pdfViewer) {
+        throw new Error('Không thể khởi tạo trình hiển thị PDF. Vui lòng tải lại trang.');
+      }
 
       this.pdfViewer.setDocument(this.pdfDoc);
       this.pdfLinkService.setDocument(this.pdfDoc, null);

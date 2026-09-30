@@ -842,11 +842,22 @@ input:checked + .slider:before {
   width: 100%;
 }
 
-/* PDF Viewer Container */
-.viewer-container {
+/* PDF Viewer Wrapper & Container */
+.viewer-wrapper {
   flex: 1;
-  overflow: auto;
   position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.viewer-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
   background: var(--bg-app);
 }
 
